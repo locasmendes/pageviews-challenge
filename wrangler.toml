@@ -49,3 +49,8 @@ compatibility_date = "2023-08-21"
 # [[migrations]]
 # tag = "v1"
 # new_classes = ["MyDurableObject"]
+
+[[d1_databases]]
+binding = "DB" # i.e. available in your Worker on env.DB
+database_name = "pageviews" # TODO: Substitua pelo nome do seu banco de dados
+database_id = "8efd3414-4f60-49b9-ac8a-60fa52024d45" #TODO: Substitua pelo ID do seu banco de dados

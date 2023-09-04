@@ -3,12 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "migrate": "wrangler d1 execute pageviews --local --file=./src/database/schema.sql",
     "deploy": "wrangler deploy",
-    "start": "wrangler dev"
+    "dev": "npm run migrate && wrangler dev",
+    "test": "npm run migrate && vitest"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230419.0",
     "typescript": "^5.0.4",
+    "vitest": "^0.34.3",
     "wrangler": "^3.0.0"
   }
 }

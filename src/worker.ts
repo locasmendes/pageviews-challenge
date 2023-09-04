@@ -1,3 +1,6 @@
+import { getPageViews, incrementPageViews } from './database/core';
+import { validateKey } from './utils/validator';
+
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
@@ -9,24 +12,42 @@
  */
 
 export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-	//
-	// Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-	// MY_SERVICE: Fetcher;
-	//
-	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
-	// MY_QUEUE: Queue;
+	DB: D1Database;
+}
+
+async function handlePageViewRequest(request: Request, env: Env): Promise<Response> {
+	const startTime = Date.now();
+
+	const pagePath = new URL(request.url).pathname;
+	const urlParts = pagePath.split('/');
+	const route = urlParts[1];
+
+	if (route === 'pageview') {
+		const key = urlParts[2];
+		if (!validateKey(key)) {
+			return new Response('Invalid key', { status: 400 });
+		}
+
+		const views = await getPageViews(env.DB, key);
+		await incrementPageViews(env.DB, key, views);
+
+		const endTime = Date.now();
+		const response = new Response(`${views}`, { status: 200 });
+		const duration = endTime - startTime;
+		response.headers.set('Content-Type', 'text/plain');
+		response.headers.set('X-Runtime', `${duration}`);
+		return response;
+	}
+
+	return new Response('404 Not Found', { status: 404 });
 }
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return new Response('Hello World!');
+		if (request.method !== 'GET') {
+			return new Response('Method not allowed', { status: 405 });
+		}
+
+		return handlePageViewRequest(request, env);
 	},
 };
